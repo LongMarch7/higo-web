@@ -1,0 +1,7 @@
+[build]
+go get -v github.com/LongMarch7/higo-web
+
+[run]
+
+higo-web -c -n="gateway" -p="E://go_project/higo/src/github.com/LongMarch7/higo-web/config/config.json"
+higo-web -s -n="WebServer" -p="E://go_project/higo/src/github.com/LongMarch7/higo-web/config/config.json"

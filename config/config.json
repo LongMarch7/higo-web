@@ -1,0 +1,34 @@
+{
+  "domain": "localhost",
+  "ssl_key": "",
+  "ssl_crt": "",
+  "port": "8080",
+  "consul_server": "http://localhost:8500",
+  "service_list":[
+    {
+      "name": "WebServer",
+      "addr": "127.0.0.1",
+      "port": "0",
+      "Count": "1024",
+      "ad_addr": "192.168.1.80",
+      "ad_port":"10086"
+    }
+  ],
+  "retry_count": 3,
+  "retry_time": 0,
+  "middleware":{
+    "zipkin_url": "http://127.0.0.1:9411/api/v1/spans",
+    "zipkinhost_port": "localhost:0",
+    "zipkin_debug": false,
+    "ratelimit_burst": 100,
+    "ratelimit_interval": 10000000,
+    "hystrix_timeout": 1000,
+    "hystrix_mcr": 100,
+    "hystrix_rvt": 50,
+    "hystrix_sw": 5000,
+    "hystrix_ept": 50
+  },
+  "static_path":"E:/go_project/higo/src/github.com/LongMarch7/higo-web/public/static",
+  "upload_path":"E:/go_project/higo/src/github.com/LongMarch7/higo-web/public/upload",
+  "template_path": "E:/go_project/higo/src/github.com/LongMarch7/higo-web/template"
+}
