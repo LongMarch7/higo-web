@@ -124,6 +124,11 @@ func svrResolving(config *config.Configer) *svrConfig{
     }
     svrConf.sOpts = append(svrConf.sOpts,app.SzOptions(zOptions))
 
+    if len(config.Config.TemplatePath) > 0 {
+        svrConf.TemplatePath = config.Config.TemplatePath
+    }else{
+        svrConf.TemplatePath = "template"
+    }
     var notfouned = true
     for _,value := range config.Config.ServiceList{
         if value.Name == config.Name{

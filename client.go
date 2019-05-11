@@ -61,7 +61,7 @@ func GateWay(config *config.Configer) {
             cliConf.router.Add([]router.Routs{
                 {"post|get","/admin/{name}",base.MakeReqDataMiddleware(
                     web.MakeHtmlCallHandler(client.GetClientEndpoint(service.Name),"admin:Index"))},
-                {"post|get","/cookie/{name}",base.MakeReqDataMiddleware(
+                {"post|get","/login/{name}",base.MakeReqDataMiddleware(
                     web.MakeApiCallHandler(client.GetClientEndpoint(service.Name),"admin:Login"))},
             })
         }
