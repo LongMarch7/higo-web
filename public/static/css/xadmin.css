@@ -141,20 +141,6 @@ xblock{
 .x-right{
   float: right;
 }
-.x-so{
-    /*text-align: center;*/
-    /*background: #f2f2f2 url() 0 0 no-repeat;*/
-    margin-bottom: 20px;
-}
-.x-so input.layui-input{
-    width: 150px;
-}
-.x-so .layui-form-label{
-    display: inline-block;
-}
-.x-so input.layui-input,.x-so input.layui-btn{
-    display: inline-block;
-}
 .x-red{
     color: red;
 }
@@ -237,25 +223,6 @@ xblock{
     background-color:rgba(0,0,0,0);
     float: right;
 
-}
-.container .left_open{
-    height: 45px;
-    float: left;
-}
-.container .left_open i{
-    display: block;
-    background: rgba(255,255,255,0.1) url() 0 0 no-repeat;
-    color: #fff;
-    width: 32px;
-    height: 32px;
-    line-height: 32px;
-    border-radius: 3px;
-    text-align: center;
-    margin-top: 7px;
-    cursor: pointer;
-}
-.container .left_open i:hover{
-    background: rgba(255,255,255,0.3) url() 0 0 no-repeat;
 }
 
 .container .left{
@@ -485,6 +452,7 @@ table th, table td {
     border-top: 1px solid rgba(255, 255, 255, 0.2);
     line-height: 41px;
     color: #fff;
+    text-align: center;
     /*padding-left: 10px;*/
 }
 .footer .copyright{

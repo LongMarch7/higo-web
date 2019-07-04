@@ -1,7 +1,11 @@
 [build]
 go get -v github.com/LongMarch7/higo-web
+[cross compile]
+GOOS=linux GOARCH=amd64 go get -v github.com/LongMarch7/higo-web
+
 
 [run]
+higo-web -mode="init" -conf="E:/go_project/higo/src/github.com/LongMarch7/higo-web/config/config.json"
 
-higo-web -c -n="gateway" -p="E://go_project/higo/src/github.com/LongMarch7/higo-web/config/config.json"
-higo-web -s -n="WebServer" -p="E://go_project/higo/src/github.com/LongMarch7/higo-web/config/config.json"
+higo-web -mode="cli" -name="gateway" -conf="E:/go_project/higo/src/github.com/LongMarch7/higo-web/config/config.json"
+higo-web -mode="svr" -name="WebServer" -conf="E://go_project/higo/src/github.com/LongMarch7/higo-web/config/config.json" -port="10085" -ad_port="10086"

@@ -1,74 +1,81 @@
 package main
 
 import (
-    "github.com/LongMarch7/higo-web/config"
+    "github.com/LongMarch7/higo/config"
     "github.com/LongMarch7/higo/app"
     "github.com/LongMarch7/higo/middleware"
     "github.com/LongMarch7/higo/middleware/hystrix"
     "github.com/LongMarch7/higo/middleware/ratelimit"
     "github.com/LongMarch7/higo/middleware/zipkin"
-    "strconv"
+    "strings"
     "time"
     "github.com/LongMarch7/higo/router"
     "context"
+    "github.com/LongMarch7/higo/util/log"
 )
 
-func middlewareResolving(config *config.Configer) []middleware.MOption{
+func middlewareResolving(mw config.Middleware) ([]middleware.MOption, []zipkin.ZOption){
     var mOpts []middleware.MOption
 
     var hOptions []hystrix.HOption
-    if config.Config.Middleware.HystrixEPT != 0 {
-        hOptions = append(hOptions,hystrix.ErrorPercentThreshold(config.Config.Middleware.HystrixEPT))
+    if mw.HystrixEPT != 0 {
+        hOptions = append(hOptions,hystrix.ErrorPercentThreshold(mw.HystrixEPT))
     }
-    if config.Config.Middleware.HystrixMCR != 0 {
-        hOptions = append(hOptions,hystrix.MaxConcurrentRequests(config.Config.Middleware.HystrixMCR))
+    if mw.HystrixMCR != 0 {
+        hOptions = append(hOptions,hystrix.MaxConcurrentRequests(mw.HystrixMCR))
     }
-    if config.Config.Middleware.HystrixRVT != 0 {
-        hOptions = append(hOptions,hystrix.RequestVolumeThreshold(config.Config.Middleware.HystrixRVT))
+    if mw.HystrixRVT != 0 {
+        hOptions = append(hOptions,hystrix.RequestVolumeThreshold(mw.HystrixRVT))
     }
-    if config.Config.Middleware.HystrixSW != 0 {
-        hOptions = append(hOptions,hystrix.SleepWindow(config.Config.Middleware.HystrixSW))
+    if mw.HystrixSW != 0 {
+        hOptions = append(hOptions,hystrix.SleepWindow(mw.HystrixSW))
     }
-    if config.Config.Middleware.HystrixTimeout != 0 {
-        hOptions = append(hOptions,hystrix.Timeout(config.Config.Middleware.HystrixTimeout))
+    if mw.HystrixTimeout != 0 {
+        hOptions = append(hOptions,hystrix.Timeout(mw.HystrixTimeout))
     }
     if len(hOptions) >0 {
         mOpts = append(mOpts,middleware.HOptions(hOptions))
     }
 
     var rOptions   []ratelimit.ROption
-    if config.Config.Middleware.RatelimitBurst > 0 {
-        rOptions = append(rOptions,ratelimit.Burst(config.Config.Middleware.RatelimitBurst))
+    if mw.RatelimitBurst > 0 {
+        rOptions = append(rOptions,ratelimit.Burst(mw.RatelimitBurst))
     }
-    if config.Config.Middleware.RatelimitInterval > 0 {
-        rOptions = append(rOptions,ratelimit.Interval(time.Duration(config.Config.Middleware.RatelimitInterval)))
+    if mw.RatelimitInterval > 0 {
+        rOptions = append(rOptions,ratelimit.Interval(time.Duration(mw.RatelimitInterval)))
     }
     if len(rOptions) >0 {
         mOpts = append(mOpts,middleware.ROptions(rOptions))
     }
 
     var zOptions   []zipkin.ZOption
-    zOptions = append(zOptions,zipkin.Debug(config.Config.Middleware.ZipkinDebug))
-    if len(config.Config.Middleware.ZipkinhostPort) > 0 {
-        zOptions = append(zOptions,zipkin.HostPort(config.Config.Middleware.ZipkinhostPort))
+    zOptions = append(zOptions,zipkin.Debug(mw.ZipkinDebug))
+    if len(mw.ZipkinhostPort) > 0 {
+        zOptions = append(zOptions,zipkin.HostPort(mw.ZipkinhostPort))
     }
-    if len(config.Config.Middleware.ZipkinUrl) > 0 {
-        zOptions = append(zOptions,zipkin.Url(config.Config.Middleware.ZipkinUrl))
+    if len(mw.ZipkinUrl) > 0 {
+        zOptions = append(zOptions,zipkin.Url(mw.ZipkinUrl))
+    }
+    if mw.ZipkinMaxLogs > 5 {
+        zOptions = append(zOptions,zipkin.MaxLogsPerSpan(mw.ZipkinMaxLogs))
     }
     if len(zOptions) >0 {
         mOpts = append(mOpts,middleware.ZOptions(zOptions))
     }
-    return mOpts
+    return mOpts, zOptions
 }
 func cliResolving(config *config.Configer) *cliConfig{
     cliConf := new(cliConfig)
     cliConf.router = router.NewRouter()
 
     cliConf.mOpts = append(cliConf.mOpts,middleware.Prefix(config.Name),middleware.MethodName("request"))
-    resolves := middlewareResolving(config)
+    resolves,zipkinOpts := middlewareResolving(config.Config.CliMw)
     if len(resolves) > 0 {
         cliConf.mOpts = append(cliConf.mOpts,resolves...)
     }
+    zipkinOpts = append(zipkinOpts,zipkin.Name(config.Name))
+    cliConf.cOpts = append(cliConf.cOpts,app.CzOptions(zipkinOpts))
+
     if config.Config.RetryTime > 0 {
         cliConf.cOpts = append(cliConf.cOpts,app.CRetryTime(time.Duration(config.Config.RetryTime)))
     }
@@ -79,14 +86,14 @@ func cliResolving(config *config.Configer) *cliConfig{
         cliConf.cOpts = append(cliConf.cOpts,app.CConsulAddr(config.Config.ConsulServer))
     }
     if len(config.Config.StaticPath) > 0 {
-        cliConf.staticPath = config.Config.StaticPath
+        cliConf.staticPath = config.Config.RootPath + config.Config.StaticPath
     }else{
-        cliConf.staticPath = "public/static"
+        cliConf.staticPath = config.Config.RootPath + "public/static"
     }
     if len(config.Config.UploadPath) > 0 {
-        cliConf.uploadPath = config.Config.UploadPath
+        cliConf.uploadPath = config.Config.RootPath + config.Config.UploadPath
     }else{
-        cliConf.uploadPath = "public/upload"
+        cliConf.uploadPath = config.Config.RootPath + "public/upload"
     }
     if len(config.Config.Port) > 0 {
         cliConf.port = config.Config.Port
@@ -98,13 +105,15 @@ func cliResolving(config *config.Configer) *cliConfig{
 }
 
 func svrResolving(config *config.Configer) *svrConfig{
-    svrConf :=new(svrConfig)
+    svrConf := new(svrConfig)
 
     svrConf.mOpts = append(svrConf.mOpts,middleware.Prefix(config.Name))
-    resolves := middlewareResolving(config)
+    resolves,zipkinOpts := middlewareResolving(config.Config.SvrMw)
     if len(resolves) > 0 {
         svrConf.mOpts = append(svrConf.mOpts,resolves...)
     }
+    zipkinOpts = append(zipkinOpts,zipkin.Name(config.Name))
+    svrConf.sOpts = append(svrConf.sOpts,app.SzOptions(zipkinOpts))
 
     if len(config.Name) > 0 {
         svrConf.sOpts = append(svrConf.sOpts,app.SPrefix(config.Name))
@@ -114,50 +123,121 @@ func svrResolving(config *config.Configer) *svrConfig{
     }
 
     svrConf.sOpts = append(svrConf.sOpts,app.SCtx(context.Background()))
-    var zOptions   []zipkin.ZOption
-    zOptions = append(zOptions,zipkin.Name(config.Name),zipkin.Debug(config.Config.Middleware.ZipkinDebug))
-    if len(config.Config.Middleware.ZipkinhostPort) > 0 {
-        zOptions = append(zOptions,zipkin.HostPort(config.Config.Middleware.ZipkinhostPort))
-    }
-    if len(config.Config.Middleware.ZipkinUrl) > 0 {
-        zOptions = append(zOptions,zipkin.Url(config.Config.Middleware.ZipkinUrl))
-    }
-    svrConf.sOpts = append(svrConf.sOpts,app.SzOptions(zOptions))
+    //var zOptions   []zipkin.ZOption
+    //zOptions = append(zOptions,zipkin.Name(config.Name),zipkin.Debug(mw.ZipkinDebug))
+    //if len(mw.ZipkinhostPort) > 0 {
+    //    zOptions = append(zOptions,zipkin.HostPort(mw.ZipkinhostPort))
+    //}
+    //if len(mw.ZipkinUrl) > 0 {
+    //    zOptions = append(zOptions,zipkin.Url(mw.ZipkinUrl))
+    //}
+    //if mw.ZipkinMaxLogs > 5 {
+    //    zOptions = append(zOptions,zipkin.MaxLogsPerSpan(mw.ZipkinMaxLogs))
+    //}
 
     if len(config.Config.TemplatePath) > 0 {
-        svrConf.TemplatePath = config.Config.TemplatePath
+        svrConf.templatePath = config.Config.RootPath + config.Config.TemplatePath
     }else{
-        svrConf.TemplatePath = "template"
+        svrConf.templatePath = config.Config.RootPath + "template"
     }
-    var notfouned = true
+    notFound := true
     for _,value := range config.Config.ServiceList{
         if value.Name == config.Name{
             if len(value.Addr) > 0 {
                 svrConf.sOpts = append(svrConf.sOpts,app.SServerAddr(value.Addr))
             }
-            if len(value.Port) > 0 {
-                port,err := strconv.Atoi(value.Port)
-                if err == nil{
-                    svrConf.sOpts = append(svrConf.sOpts,app.SServerPort(port))
-                }
-            }
+            //if len(value.Port) > 0 {
+            //    port,err := strconv.Atoi(value.Port)
+            //    if err == nil{
+            //        svrConf.sOpts = append(svrConf.sOpts,app.SServerPort(port))
+            //    }
+            //}
             if len(value.AdAddr) > 0 {
                 svrConf.sOpts = append(svrConf.sOpts,app.SAdvertiseAddress(value.AdAddr))
             }
-            if len(value.AdPort) > 0 {
-                svrConf.sOpts = append(svrConf.sOpts,app.SAdvertisePort(value.AdPort))
-            }
+            //if len(value.AdPort) > 0 {
+            //    svrConf.sOpts = append(svrConf.sOpts,app.SAdvertisePort(value.AdPort))
+            //}
             if len(value.Count) > 0 {
                 svrConf.sOpts = append(svrConf.sOpts,app.SMaxThreadCount(value.Count))
             }else{
                 svrConf.sOpts = append(svrConf.sOpts,app.SMaxThreadCount("1024"))
             }
-            notfouned = false
+            svrConf.sOpts = append(svrConf.sOpts,app.SServerPort(config.Port))
+            svrConf.sOpts = append(svrConf.sOpts,app.SAdvertisePort(config.AdPort))
+            notFound = false
             break
         }
     }
-    if notfouned {
+    svrConf.sql = sqlResolving(config)
+    svrConf.mem = memcacheResolving(config)
+    if notFound {
         return nil
     }
     return svrConf
+}
+
+func sqlResolving(config *config.Configer) config.Sql{
+    sql := config.Config.Sql
+    if len(sql.Driver) == 0{
+        sql.Driver = "mysql"
+    }
+    if len(sql.Port) == 0{
+        sql.Port = "13306"
+    }
+    if len(sql.Pwd) == 0 {
+        sql.Pwd = "123456"
+    }
+    if len(sql.Addr) == 0 {
+        sql.Addr = "127.0.0.1"
+    }
+    if len(sql.Db) == 0 {
+        sql.Db = "higo"
+    }
+    if len(sql.File) == 0 {
+        sql.File = "db/default.sql"
+    }else{
+        sql.File = config.Config.RootPath + sql.File
+    }
+    if len(sql.Net) == 0 {
+        sql.Net = "tcp"
+    }
+    if len(sql.User) == 0 {
+        sql.User = "root"
+    }
+    if sql.MaxIdleConn <= 0 {
+        sql.MaxIdleConn = 100
+    }
+    if sql.MaxOpenConn <= 0{
+        sql.MaxOpenConn = 100
+    }
+    return sql
+}
+func memcacheResolving(config *config.Configer) config.Memcache{
+    mem :=config.Config.Memcache
+    if mem.MaxIdleConn <=0 {
+        mem.MaxIdleConn = 10
+    }
+    if len(mem.Server) == 0 {
+        mem.Server = append(mem.Server,"127.0.0.1:11211")
+    }
+    return mem
+}
+
+func LogConfig(logger  zap.Config, name string) *zap.Config{
+    if logger.MaxAge <= 0 {
+        logger.MaxAge = 1
+    }
+    if logger.MaxSize <= 0 {
+        logger.MaxSize =1
+    }
+    if logger.MaxBackups <=0 {
+        logger.MaxBackups = 3
+    }
+    if strings.Compare(logger.Type, zap.TYPE_FILE) == 0{
+        logger.Filename = name
+    }else{
+        logger.Filename = ""
+    }
+    return &logger
 }

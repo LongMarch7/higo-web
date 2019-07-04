@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.0</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,user-ssystemcalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+    {[template "header" .]}
+    <script type="text/javascript" src="/static/js/system.js"></script>
+</head>
+
+<body>
+<div class="x-body">
+    <form id="form-data" method="post" class="layui-form layui-form-pane">
+
+        <div class="layui-form-item">
+            <label for="UserNickname" class="layui-form-label">
+                <span class="x-red">*</span>昵称
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="UserNickname" name="UserNickname" required="" lay-verify="required|UserName"
+                       autocomplete="off" class="layui-input" value="{[.UserInfo.UserNickname]}">
+            </div>
+        </div>
+        <div class="layui-form-item layui-form-text">
+            <label class="layui-form-label">
+                拥有权限
+            </label>
+            <div class="layui-input-block">
+                {[range $key,$value := .RoleMap]}
+                <input type="radio" name="roles" value="{[$value.ID]}" lay-skin="primary" title="{[$value.Name]}"
+                       {[if eq $value.Status 1]}
+                       checked="checked"
+                       {[end]}
+                >
+                {[end]}
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">账号</label>
+                <div class="layui-input-inline">
+                    <input  name="UserLogin"  class="layui-input layui-disabled" value="{[.UserInfo.UserLogin]}">
+                </div>
+            </div>
+            <div class="layui-inline">
+                <label class="layui-form-label">绑定账号</label>
+                <div class="layui-input-inline">
+                    <input  name="BindId"  class="layui-input" value="{[.UserInfo.BindId]}">
+                </div>
+            </div>
+        </div>
+        <div class="layui-form-item" >
+            <div class="layui-inline">
+                <label class="layui-form-label">
+                    性别
+                </label>
+                <div class="layui-input-block">
+                    <input type="radio" name="sex" value="0" lay-skin="primary" title="保密" {[if eq .UserInfo.Sex 0]} checked="checked" {[end]}>
+                    <input type="radio" name="sex" value="1" lay-skin="primary" title="男" {[if eq .UserInfo.Sex 1]} checked="checked" {[end]}>
+                    <input type="radio" name="sex" value="2" lay-skin="primary" title="女" {[if eq .UserInfo.Sex 2]} checked="checked" {[end]}>
+                </div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <input type="hidden" id="Id" name="Id" value="{[.UserInfo.Id]}">
+            <button class="layui-btn" lay-submit="" lay-filter="sub">提交</button>
+        </div>
+
+    </form>
+</div>
+<script>
+    layui.use(['form','layer'], function(){
+        var form = layui.form
+        var layer = layui.layer
+
+        form.on('submit(sub)', function(data){
+            var loading = layer.load(1, {shade: [0.1,'#fff']});
+            formSubmit('/admin/user/user_edit_post', $("#form-data").serialize(),"alert","reload")
+            layer.close(loading);
+            return false
+        });
+
+    })
+</script>
+</body>
+</html>

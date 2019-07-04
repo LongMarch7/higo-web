@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.0</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+    {[template "header" .]}
+    <script type="text/javascript" src="/static/js/role.js"></script>
+</head>
+<body>
+
+<div class="x-nav">
+      <span class="layui-breadcrumb">
+        <a href="">用户管理</a>
+        <a href="">角色管理</a>
+        <a>
+          <cite>角色列表</cite></a>
+      </span>
+    <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right" href="javascript:location.replace(location.href);" title="刷新">
+        <i class="layui-icon" style="line-height:30px">ဂ</i></a>
+</div>
+
+<form class="layui-form">
+    <div id="search-role-data" class="layui-form-item" style="margin-bottom: 0px; margin-top: 10px;" >
+        <input class="layui-input layui-input-inline" placeholder="开始日" name="start_time" id="start_time">
+        <input class="layui-input layui-input-inline" placeholder="截止日" name="end_time" id="end_time">
+        <input class="layui-input layui-input-inline" placeholder="请输入角色名" type="text" name="role_name"  autocomplete="off">
+        <button class="layui-btn" lay-submit lay-filter="sreach"><i class="layui-icon">&#xe615;</i></button>
+    </div>
+</form>
+<table class="layui-hide" id="roleList" lay-filter="roleListAction"></table>
+
+<script type="text/html" id="toolbarTpl">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm" lay-event="addRole" ><i class="layui-icon"></i>添加</button>
+        <button class="layui-btn layui-btn-sm" lay-event="startRoles" style="background-color: #5FB878"><i class="layui-icon layui-icon-play"></i>批量开启</button>
+        <button class="layui-btn layui-btn-sm layui-bg-orange" lay-event="stopRoles"><i class="layui-icon layui-icon-pause"></i>批量关闭</button>
+        <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="deleteRoles"><i class="layui-icon layui-icon-delete"></i>批量删除</button>
+    </div>
+</script>
+
+<script type="text/html" id="powerTpl">
+{{#  if(d.power === 1){ }}
+<span style="color: #5FB878;">读写</span>
+{{#  } else { }}
+<span style="color: #FFB800;">只读</span>
+  {{#  } }}
+</script>
+
+<script type="text/html" id="actionTpl">
+<div class="layui-form-item">
+        <input type="checkbox" name="status" value="{{d.id}}" lay-filter="statusSwitch" lay-skin="switch" lay-text="正常|禁用"
+{{#  if(d.role_status){ }} checked {{#  } }}>
+    <button class="layui-btn layui-btn-radius layui-btn-xs" lay-event="edit">
+        <i class="layui-icon">&#xe642;</i>
+        编辑
+    </button>
+    <i></i>
+    <button class="layui-btn layui-btn-radius layui-btn-xs layui-btn-danger" lay-event="delete">
+        <i class="layui-icon">&#xe640;</i>
+        删除
+    </button>
+</div>
+</script>
+
+
+</body>
+</html>
